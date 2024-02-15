@@ -1,37 +1,44 @@
 <script>
-  import { T } from '@threlte/core'
-  import { ContactShadows, Float, Grid, OrbitControls } from '@threlte/extras'
-</script>
+    import { T, useThrelte } from '@threlte/core'
+    import { ContactShadows, Grid, OrbitControls, Portal } from '@threlte/extras'
+    import { Sheet, SheetObject, createTransformer } from '@threlte/theatre';
+
+      import * as TheatreStuff from '@theatre/core';
+
+    const { scene } = useThrelte()
+    let lightHelper
+
+    const hex = d => Number(d).toString(16).padStart(2, '0')
+  </script>
+
+<SheetObject key="Grid" let:Declare>
+  <Declare props={{thick: 0.8, color: {r: 255, g: 0, b: 0}}} let:values>
+    <Grid 
+    backgroundOpacity={0}
+    sectionColor="#000000"
+    sectionThickness={0}
+    infiniteGrid
+    cellThickness={values.thick}
+    cellColor={"#" + hex(values.color.r) + hex(values.color.g) + hex(values.color.b)}
+    
+  />
+  </Declare>
+</SheetObject>
+
 
 <T.PerspectiveCamera
-  makeDefault
-  position={[-10, 10, 10]}
-  fov={15}
+makeDefault
+position={[-10, 10, 10]}
+fov={15}
 >
-  <OrbitControls
-    autoRotate
-    enableZoom={false}
-    enableDamping
-    autoRotateSpeed={0.5}
-    target.y={1.5}
-  />
+<OrbitControls
+  autoRotate
+  enableZoom={true}
+  enableDamping
+  autoRotateSpeed={0.0}
+  target.y={1.5}
+/>
 </T.PerspectiveCamera>
-
-<T.DirectionalLight
-  intensity={0.8}
-  position.x={5}
-  position.y={10}
-/>
-<T.AmbientLight intensity={0.2} />
-
-<Grid
-  position.y={-0.001}
-  cellColor="#ffffff"
-  sectionColor="#ffffff"
-  sectionThickness={0}
-  fadeDistance={25}
-  cellSize={2}
-/>
 
 <ContactShadows
   scale={10}
@@ -40,42 +47,100 @@
   opacity={0.5}
 />
 
-<Float
-  floatIntensity={1}
-  floatingRange={[0, 1]}
+<SheetObject
+  let:Transform
+  let:Sync
+  key="Torus"
 >
-  <T.Mesh
-    position.y={1.2}
-    position.z={-0.75}
-  >
-    <T.BoxGeometry />
-    <T.MeshStandardMaterial color="#0059BA" />
-  </T.Mesh>
-</Float>
+  <Transform>
+    <T.Mesh
+      position={[0, 0, 0]}
+      rotation.x={5}
+      rotation.y={71}
+      castShadow
+    >
+      <T.TorusKnotGeometry args={[0.5, 0.15, 100, 12, 2, 3]} />
+      <T.MeshStandardMaterial color="#F85122">
+        <Sync
+          color
+          roughness
+          metalness
+        />
+      </T.MeshStandardMaterial>
+      <Sync
+          castShadow
+          receiveShadow
+        />
+    </T.Mesh>
+  </Transform>
+</SheetObject>
 
-<Float
-  floatIntensity={1}
-  floatingRange={[0, 1]}
+<SheetObject
+  let:Transform
+  let:Sync
+  key="Box"
 >
-  <T.Mesh
-    position={[1.2, 1.5, 0.75]}
-    rotation.x={5}
-    rotation.y={71}
-  >
-    <T.TorusKnotGeometry args={[0.5, 0.15, 100, 12, 2, 3]} />
-    <T.MeshStandardMaterial color="#F85122" />
-  </T.Mesh>
-</Float>
+  <Transform>
+    <T.Mesh
+      position={[0, 0, 0]}
+      castShadow
+    >
+      <T.BoxGeometry args={[1, 1, 1]} />
+      <T.MeshStandardMaterial color="#F85122">
+        <Sync
+          color
+          roughness
+          metalness
+        />
+      </T.MeshStandardMaterial>
+      <Sync
+          castShadow
+          receiveShadow
+        />
+    </T.Mesh>
+  </Transform>
+</SheetObject>
 
-<Float
-  floatIntensity={1}
-  floatingRange={[0, 1]}
+<SheetObject
+    let:Transform={TargetTransform}
+    let:Sync
+    key="Target"
+    on:change={() => {
+        if (!lightHelper) return
+        lightHelper.update()
+    }}
 >
-  <T.Mesh
-    position={[-1.4, 1.5, 0.75]}
-    rotation={[-5, 128, 10]}
-  >
-    <T.IcosahedronGeometry />
-    <T.MeshStandardMaterial color="#F8EBCE" />
-  </T.Mesh>
-</Float>
+    <TargetTransform>
+        <T.Object3D let:ref={targetRef}>
+            <Portal object={scene}>
+                <SheetObject
+                let:Transform={LightTransform}
+                let:Sync
+                key="Light"
+                on:change={() => {
+                    if (!lightHelper) return
+                    lightHelper.update()
+                }}
+                >   
+                    <LightTransform>
+                        <T.DirectionalLight let:ref={lightRef} target={targetRef} intensity={5}>
+                            <Portal object={scene}>
+                                <T.DirectionalLightHelper args={[lightRef]} bind:ref={lightHelper}/>
+                            </Portal>
+                            <Sync
+                            castShadow
+                            receiveShadow
+                            color
+                            intensity
+                            />
+                        </T.DirectionalLight>
+                    </LightTransform>
+                </SheetObject>
+            </Portal>
+            
+        </T.Object3D>
+    </TargetTransform>
+    
+</SheetObject>
+
+<T.AmbientLight intensity={0.2} />

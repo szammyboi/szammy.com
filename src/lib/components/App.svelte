@@ -1,8 +1,11 @@
 <script>
   import { Canvas } from '@threlte/core'
   import Scene from './Scene.svelte'
+  import { Theatre } from '@threlte/theatre';
 </script>
 
 <Canvas>
-  <Scene />
+  <Theatre>
+    <Scene />
+  </Theatre>
 </Canvas>
